@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Fut 7 El Jaguar — Sistema de Gestión de Torneos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:        #060d18;
+    --bg2:       #0a1524;
+    --bg3:       #0d1c30;
+    --surface:   #101e34;
+    --surface2:  #152540;
+    --border:    rgba(255,255,255,0.07);
+    --border2:   rgba(255,255,255,0.13);
+    --text:      #e8f0ff;
+    --text2:     #8a9abf;
+    --text3:     #445070;
+    --green:     #22c55e;
+    --green-dim: rgba(34,197,94,0.12);
+    --gold:      #c8a84b;
+    --gold2:     #e8c86a;
+    --gold-dim:  rgba(200,168,75,0.12);
+    --blue:      #3b82f6;
+    --blue-dim:  rgba(59,130,246,0.12);
+    --purple:    #a855f7;
+    --red:       #ef4444;
+    --orange:    #f97316;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Outfit', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 15px;
+  }
+
+  /* ── PITCH BACKGROUND ── */
+  .pitch-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  }
+  .pitch-bg svg {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 120%; opacity: 0.025;
+  }
+  .pitch-glow {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 20%, rgba(34,197,94,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(200,168,75,0.04) 0%, transparent 60%);
+  }
+
+  /* ── NAV ── */
+  nav.toc {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(6,13,24,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; gap: 0;
+    overflow-x: auto;
+  }
+  nav.toc .nav-brand {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.05rem; letter-spacing: 4px;
+    color: var(--gold);
+    padding: 0.9rem 1.5rem 0.9rem 0;
+    border-right: 1px solid var(--border);
+    margin-right: 0.5rem;
+    white-space: nowrap; flex-shrink: 0;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  nav.toc a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text3);
+    text-decoration: none;
+    padding: 0.9rem 1rem;
+    white-space: nowrap;
+    transition: color 0.15s;
+    letter-spacing: 0.04em;
+  }
+  nav.toc a:hover { color: var(--text); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center;
+    padding: 5rem 2rem 4rem;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(34,197,94,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,197,94,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 80%);
+  }
+  .hero > * { position: relative; z-index: 1; }
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 0.2em;
+    color: var(--green); text-transform: uppercase;
+    margin-bottom: 1.5rem;
+  }
+  .hero h1 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(4rem, 13vw, 9rem);
+    letter-spacing: 0.08em;
+    line-height: 0.9;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 50%, var(--gold2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero h1 span { color: var(--green); -webkit-text-fill-color: var(--green); }
+  .hero-tagline {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+  .hero-sub {
+    font-size: clamp(0.95rem, 2vw, 1.1rem);
+    color: var(--text2);
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.8;
+  }
+  .hero-badges {
+    display: flex; flex-wrap: wrap;
+    gap: 0.5rem; justify-content: center;
+    margin-bottom: 3rem;
+  }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 5px 12px;
+    border-radius: 100px; border: 1px solid;
+    letter-spacing: 0.05em;
+  }
+  .badge-green  { border-color: rgba(34,197,94,0.4);  color: var(--green);  background: var(--green-dim); }
+  .badge-gold   { border-color: rgba(200,168,75,0.4); color: var(--gold);   background: var(--gold-dim); }
+  .badge-blue   { border-color: rgba(59,130,246,0.4); color: var(--blue);   background: var(--blue-dim); }
+  .badge-purple { border-color: rgba(168,85,247,0.4); color: var(--purple); background: rgba(168,85,247,0.1); }
+  .badge-red    { border-color: rgba(239,68,68,0.4);  color: var(--red);    background: rgba(239,68,68,0.1); }
+  .badge-orange { border-color: rgba(249,115,22,0.4); color: var(--orange); background: rgba(249,115,22,0.1); }
+
+  .hero-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    max-width: 640px; width: 100%;
+  }
+  .hero-stat { background: var(--surface); padding: 1.25rem 1rem; text-align: center; }
+  .hero-stat .num {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2rem; color: var(--text);
+    display: block; line-height: 1; margin-bottom: 4px;
+  }
+  .hero-stat .num.green { color: var(--green); }
+  .hero-stat .num.gold  { color: var(--gold); }
+  .hero-stat .lbl {
+    font-size: 10px; color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    max-width: 1100px; margin: 0 auto;
+    padding: 5rem 2rem;
+    position: relative; z-index: 1;
+  }
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--green);
+    margin-bottom: 0.75rem;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: 0.05em; line-height: 1;
+    color: var(--text); margin-bottom: 1rem;
+  }
+  .section-desc {
+    font-size: 1rem; color: var(--text2);
+    max-width: 680px; line-height: 1.85;
+    margin-bottom: 3rem;
+  }
+
+  .divider {
+    height: 1px; background: var(--border);
+    max-width: 1100px; margin: 0 auto;
+    position: relative; z-index: 1;
+  }
+
+  /* ── OVERVIEW GRID ── */
+  .overview-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden;
+  }
+  .overview-card {
+    background: var(--surface); padding: 1.75rem;
+    transition: background 0.2s;
+  }
+  .overview-card:hover { background: var(--surface2); }
+  .ov-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1rem; font-size: 20px;
+  }
+  .ov-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.1rem; letter-spacing: 2px;
+    color: var(--text); margin-bottom: 0.5rem;
+  }
+  .ov-desc { font-size: 13px; color: var(--text2); line-height: 1.7; }
+
+  /* ── FEATURE LIST ── */
+  .feature-list {
+    display: flex; flex-direction: column;
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    margin: 2rem 0;
+  }
+  .feature-item {
+    background: var(--surface); padding: 1.25rem 1.5rem;
+    transition: background 0.15s;
+  }
+  .feature-item:hover { background: var(--surface2); }
+  .feature-icon { display: inline-block; margin-right: 10px; color: var(--green); }
+  .feature-text { font-size: 13.5px; color: var(--text); }
+
+  /* ── TECH GRID ── */
+  .tech-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+  }
+  .tech-card {
+    background: var(--surface); padding: 1.5rem;
+    transition: background 0.2s;
+  }
+  .tech-card:hover { background: var(--surface2); }
+  .tech-card-title {
+    font-family: 'Bebas Neue', cursive;
+    letter-spacing: 2px; font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+  }
+  .tech-card ul { list-style: none; }
+  .tech-card ul li {
+    font-size: 13px; color: var(--text2);
+    padding: 3px 0;
+  }
+  .tech-card ul li::before { content: '→ '; color: var(--green); }
+
+  /* ── MODULE CARDS ── */
+  .module-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
+  }
+  .module-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+  }
+  .module-card-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.75rem;
+  }
+  .module-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .module-name {
+    font-family: 'Bebas Neue', cursive;
+    letter-spacing: 3px; font-size: 1rem;
+  }
+  .module-sub { font-size: 11px; color: var(--text3); letter-spacing: 1px; }
+  .module-body { padding: 1.25rem 1.5rem; }
+  .module-body p { font-size: 13px; color: var(--text2); line-height: 1.75; margin-bottom: 0.75rem; }
+  .module-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .module-tag {
+    font-size: 11px; padding: 3px 9px; border-radius: 100px;
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text3); font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── DATABASE SCHEMA ── */
+  .schema-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .schema-table {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px; overflow: hidden;
+  }
+  .schema-table-header {
+    background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(59,130,246,0.05));
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .schema-table-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem; color: var(--green);
+    letter-spacing: 0.05em; font-weight: 500;
+  }
+  .schema-table-body { padding: 0.75rem 1.25rem; }
+  .schema-col {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 12px;
+  }
+  .schema-col:last-child { border-bottom: none; }
+  .schema-col-name { color: var(--text); font-family: 'IBM Plex Mono', monospace; flex: 1; }
+  .schema-col-type { color: var(--blue); font-size: 11px; }
+  .schema-col-pk { color: var(--gold); font-size: 10px; font-family: 'IBM Plex Mono', monospace; }
+
+  /* ── API ENDPOINTS ── */
+  .api-group { margin-bottom: 2rem; }
+  .api-group-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--text3);
+    padding: 0.5rem 0; margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .api-row {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: 0.5rem;
+    transition: background 0.15s;
+  }
+  .api-row:hover { background: var(--surface2); }
+  .api-method {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 500;
+    padding: 3px 8px; border-radius: 5px;
+    min-width: 50px; text-align: center; flex-shrink: 0;
+  }
+  .method-get  { background: rgba(34,197,94,0.15);  color: var(--green); }
+  .method-post { background: rgba(59,130,246,0.15);  color: var(--blue); }
+  .method-put  { background: rgba(249,115,22,0.15);  color: var(--orange); }
+  .method-del  { background: rgba(239,68,68,0.15);   color: var(--red); }
+  .api-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--text);
+    flex: 1;
+  }
+  .api-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* ── CALLOUT ── */
+  .callout {
+    background: linear-gradient(135deg, rgba(34,197,94,0.07), rgba(59,130,246,0.04));
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 16px; padding: 1.75rem 2rem;
+    margin: 2.5rem 0; position: relative;
+  }
+  .callout::before {
+    content: ''; position: absolute;
+    left: 0; top: 0; bottom: 0; width: 3px;
+    border-radius: 3px 0 0 3px;
+    background: linear-gradient(180deg, var(--green), var(--blue));
+  }
+  .callout p { font-size: 0.95rem; color: var(--text); line-height: 1.85; }
+  .callout strong { color: var(--green); }
+
+  /* ── CODE BLOCK ── */
+  .code-block {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 12px; padding: 1.25rem 1.5rem;
+    margin: 1rem 0; position: relative; overflow-x: auto;
+  }
+  .code-block pre {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; color: var(--text2);
+    line-height: 1.8; white-space: pre;
+  }
+  .code-block .c-comment { color: var(--text3); }
+  .code-block .c-cmd     { color: var(--green); }
+  .code-block .c-str     { color: var(--gold); }
+  .code-block .c-kw      { color: var(--blue); }
+
+  /* ── STRUCTURE TREE ── */
+  .tree {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 14px; padding: 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; line-height: 2;
+  }
+  .tree .dir  { color: var(--blue); }
+  .tree .file { color: var(--text2); }
+  .tree .desc { color: var(--text3); font-size: 11px; margin-left: 0.5rem; }
+  .tree .indent { padding-left: 1.5rem; display: block; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding: 4rem 2rem 3rem;
+    border-top: 1px solid var(--border);
+    position: relative; z-index: 1;
+  }
+  footer .ft-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2rem; letter-spacing: 0.1em;
+    color: var(--text); margin-bottom: 0.5rem;
+  }
+  footer p { font-size: 13px; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+  footer .ft-green { color: var(--green); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    .module-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Pitch background -->
+<div class="pitch-bg">
+  <svg viewBox="0 0 800 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="20" width="760" height="480" stroke="white" stroke-width="2"/>
+    <line x1="400" y1="20" x2="400" y2="500" stroke="white" stroke-width="2"/>
+    <circle cx="400" cy="260" r="70" stroke="white" stroke-width="2"/>
+    <circle cx="400" cy="260" r="4" fill="white"/>
+    <rect x="20" y="170" width="130" height="180" stroke="white" stroke-width="2"/>
+    <rect x="650" y="170" width="130" height="180" stroke="white" stroke-width="2"/>
+    <rect x="20" y="200" width="60" height="120" stroke="white" stroke-width="2"/>
+    <rect x="720" y="200" width="60" height="120" stroke="white" stroke-width="2"/>
+    <circle cx="150" cy="260" r="4" fill="white"/>
+    <circle cx="650" cy="260" r="4" fill="white"/>
+    <path d="M 20 20 Q 40 40 20 60" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M 780 20 Q 760 40 780 60" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M 20 500 Q 40 480 20 460" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M 780 500 Q 760 480 780 460" stroke="white" stroke-width="2" fill="none"/>
+  </svg>
+</div>
+<div class="pitch-glow"></div>
+
+<!-- NAV -->
+<nav class="toc">
+  <div class="nav-brand">🐆 FUT 7 JAGUAR</div>
+  <a href="#overview">Overview</a>
+  <a href="#modulos">Módulos</a>
+  <a href="#features">Features</a>
+  <a href="#database">Database</a>
+  <a href="#api">API</a>
+  <a href="#estructura">Estructura</a>
+  <a href="#instalacion">Instalación</a>
+  <a href="#tech">Tech Stack</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">⚽ Vanilla JS · Node.js · Express · PostgreSQL · Docker</div>
+  <h1>FUT 7<br><span>EL JAGUAR</span></h1>
+  <div class="hero-tagline">Sistema de Gestión de Torneos de Fútbol</div>
+  <p class="hero-sub">Plataforma completa para administrar torneos de fútbol 7. Gestión de equipos, jugadores, rol de partidos, horarios con drag & drop, tabla de posiciones, goles, penales, diseños de plantillas y gráficas de estadísticas — todo en una sola aplicación.</p>
+
+  <div class="hero-badges">
+    <span class="badge badge-green">Vanilla JS</span>
+    <span class="badge badge-blue">Node.js + Express</span>
+    <span class="badge badge-gold">PostgreSQL</span>
+    <span class="badge badge-purple">Docker</span>
+    <span class="badge badge-orange">Chart.js</span>
+    <span class="badge badge-red">Multi-Categoría</span>
+    <span class="badge badge-green">Drag &amp; Drop</span>
+    <span class="badge badge-blue">Dark / Light Mode</span>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <span class="num green">8</span>
+      <span class="lbl">Módulos</span>
+    </div>
+    <div class="hero-stat">
+      <span class="num gold">13</span>
+      <span class="lbl">Tablas DB</span>
+    </div>
+    <div class="hero-stat">
+      <span class="num green">30+</span>
+      <span class="lbl">Endpoints</span>
+    </div>
+    <div class="hero-stat">
+      <span class="num gold">∞</span>
+      <span class="lbl">Categorías</span>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="section-label">¿Qué es Fut 7 El Jaguar?</div>
+  <h2 class="section-title">Sistema Integral para Torneos de Fútbol 7</h2>
+  <p class="section-desc">Fut 7 El Jaguar es una aplicación web full-stack para organizar y gestionar torneos de fútbol 7 con múltiples categorías. Cuenta con un backend REST en Node.js/Express conectado a PostgreSQL via Docker, y un frontend puramente en HTML, CSS y JavaScript Vanilla con autenticación por sesión, soporte de modo oscuro/claro, y múltiples módulos especializados.</p>
+
+  <div class="overview-grid">
+    <div class="overview-card">
+      <div class="ov-icon" style="background: var(--green-dim);">🐆</div>
+      <div class="ov-title">Login Seguro</div>
+      <div class="ov-desc">Pantalla de acceso con diseño de cancha aérea animada. Autenticación via sessionStorage con protección de rutas en cada módulo.</div>
+    </div>
+    <div class="overview-card">
+      <div class="ov-icon" style="background: var(--green-dim);">🏆</div>
+      <div class="ov-title">Multi-Categoría</div>
+      <div class="ov-desc">Todo el sistema es por categoría. Puedes tener Juvenil, Mayor, Femenil, etc. con sus propios equipos, jugadores, rol y estadísticas independientes.</div>
+    </div>
+    <div class="overview-card">
+      <div class="ov-icon" style="background: var(--blue-dim);">👥</div>
+      <div class="ov-title">Equipos y Jugadores</div>
+      <div class="ov-desc">Registro de equipos con color, escudo y datos. Gestión completa de plantilla con foto, número de jersey y estado activo/baja.</div>
+    </div>
+    <div class="overview-card">
+      <div class="ov-icon" style="background: var(--gold-dim);">📅</div>
+      <div class="ov-title">Rol de Juegos</div>
+      <div class="ov-desc">Generación automática del calendario de partidos tipo round-robin. Jornadas doradas, partidos extra, marcado de jornada actual y descarga PDF.</div>
+    </div>
+    <div class="overview-card">
+      <div class="ov-icon" style="background: rgba(168,85,247,0.12);">⏰</div>
+      <div class="ov-title">Horarios Drag &amp; Drop</div>
+      <div class="ov-desc">Agenda semanal interactiva. Arrastra partidos desde el rol hacia celdas de día/hora. Soporte para mover partidos ya agendados a otro slot.</div>
+    </div>
+    <div class="overview-card">
+      <div class="ov-icon" style="background: rgba(239,68,68,0.1);">🏆</div>
+      <div class="ov-title">Puntos &amp; Goles</div>
+      <div class="ov-desc">Tabla de posiciones automática con PJ, G, E, P, GF, GC, DG y Pts. Registro de goles y penales por jugador. Rankings individuales.</div>
+    </div>
+    <div class="overview-card">
+      <div class="ov-icon" style="background: var(--blue-dim);">🎨</div>
+      <div class="ov-title">Editor de Diseños</div>
+      <div class="ov-desc">Editor visual de plantillas tipo canva. Crea diseños con texto, formas, gradientes, colores de equipo y logos. Asigna diseños por categoría.</div>
+    </div>
+    <div class="overview-card">
+      <div class="ov-icon" style="background: rgba(249,115,22,0.1);">📊</div>
+      <div class="ov-title">Gráficas</div>
+      <div class="ov-desc">Dashboard de estadísticas con Chart.js. Partidos por día, rendimiento mensual, configuración de costos de credencial y premios por posición.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- MÓDULOS -->
+<section id="modulos">
+  <div class="section-label">Módulos del Sistema</div>
+  <h2 class="section-title">Cada Sección en Detalle</h2>
+  <p class="section-desc">La aplicación se divide en módulos independientes, cada uno con su propio conjunto de archivos HTML, CSS y JS. El menú principal organiza el acceso por categoría.</p>
+
+  <div class="module-grid">
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: var(--green-dim);">🔐</div>
+        <div>
+          <div class="module-name" style="color: var(--green);">Login</div>
+          <div class="module-sub">frontend/login/index.html</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Pantalla de acceso con cancha de fútbol renderizada en SVG con perspectiva 3D, overlay de iluminación de estadio y animación de entrada. Acepta credenciales fijas (usuario: <strong style="color:var(--gold)">jaguar</strong> / contraseña: <strong style="color:var(--gold)">jaguar123</strong>). Al autenticarse guarda la sesión en <code style="color:var(--green)">sessionStorage</code>. Todos los módulos verifican esta sesión al cargarse.</p>
+        <div class="module-tags">
+          <span class="module-tag">sessionStorage</span>
+          <span class="module-tag">SVG Pitch</span>
+          <span class="module-tag">Animación 3D</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: rgba(34,197,94,0.1);">🏠</div>
+        <div>
+          <div class="module-name" style="color: var(--green);">Menú Principal</div>
+          <div class="module-sub">frontend/menu/menu.html</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Hub central del sistema. Selector de categoría activa con desplegable personalizado. Panel de acciones por módulo (8 botones con color y glow). Encabezado con badge de temporada, toggle de tema oscuro/claro y botón de logout. Splash screen animado solo en primera carga, omitido en navegación posterior.</p>
+        <div class="module-tags">
+          <span class="module-tag">Custom Select</span>
+          <span class="module-tag">Splash Screen</span>
+          <span class="module-tag">Dark/Light Toggle</span>
+          <span class="module-tag">API Categorías</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: var(--blue-dim);">👥</div>
+        <div>
+          <div class="module-name" style="color: var(--blue);">Equipos</div>
+          <div class="module-sub">frontend/equipos/equipos.html + equipos.js</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Listado de equipos de la categoría activa. Crear equipo con nombre, color personalizado y escudo (imagen base64). CRUD completo: editar nombre/color/escudo y eliminar. Navega a la gestión de jugadores de cada equipo. Almacenamiento en PostgreSQL via API REST.</p>
+        <div class="module-tags">
+          <span class="module-tag">CRUD Equipos</span>
+          <span class="module-tag">Upload Escudo</span>
+          <span class="module-tag">Color Picker</span>
+          <span class="module-tag">Base64 Storage</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: var(--blue-dim);">⚽</div>
+        <div>
+          <div class="module-name" style="color: var(--blue);">Jugadores</div>
+          <div class="module-sub">frontend/equipos/jugadores.html + jugadores.js</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Plantilla de un equipo específico. Agregar jugadores con nombre, número de jersey y foto. Los colores del UI se adaptan dinámicamente al color del equipo via CSS variables. Soporte de dar de baja jugadores (flag <code style="color:var(--green)">baja</code>) sin eliminarlos. Auto-hash de color de jersey basado en nombre del equipo.</p>
+        <div class="module-tags">
+          <span class="module-tag">Dynamic Colors</span>
+          <span class="module-tag">Jersey Auto-Color</span>
+          <span class="module-tag">Baja/Alta</span>
+          <span class="module-tag">Foto Upload</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: var(--gold-dim);">📅</div>
+        <div>
+          <div class="module-name" style="color: var(--gold);">Rol de Juegos</div>
+          <div class="module-sub">frontend/rol/ (9 archivos)</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Generador automático de calendarios de torneo tipo round-robin. Con N equipos genera N-1 (par) o N (impar) jornadas. Cada jornada muestra los partidos con equipos local/visitante. Funcionalidades avanzadas: marcar jornada como jugada (jornada dorada ✨), agregar equipos al torneo ya iniciado, marcar partidos individuales como jugados, reordenar partidos entre jornadas y exportar todo a PDF.</p>
+        <div class="module-tags">
+          <span class="module-tag">Round-Robin</span>
+          <span class="module-tag">Jornadas Doradas</span>
+          <span class="module-tag">Exportar PDF</span>
+          <span class="module-tag">Sugerencia de Partidos</span>
+          <span class="module-tag">Persistencia DB</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: rgba(168,85,247,0.12);">⏰</div>
+        <div>
+          <div class="module-name" style="color: var(--purple);">Horarios</div>
+          <div class="module-sub">frontend/horarios/ (5 archivos)</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Agenda semanal de partidos con drag &amp; drop real. Panel izquierdo con partidos pendientes del rol. Cuadrícula de días × horas. Arrastra cualquier partido al slot deseado. Mueve partidos ya programados a otro día/hora. Verifica que el partido no esté ya jugado antes de permitir el arrastre. Los horarios se guardan como blob JSONB en PostgreSQL.</p>
+        <div class="module-tags">
+          <span class="module-tag">Drag & Drop nativo</span>
+          <span class="module-tag">Agenda Semanal</span>
+          <span class="module-tag">Validaciones</span>
+          <span class="module-tag">JSONB Storage</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: rgba(239,68,68,0.1);">🏆</div>
+        <div>
+          <div class="module-name" style="color: var(--red);">Puntos &amp; Goles</div>
+          <div class="module-sub">frontend/puntos/puntos.html</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Vista tabbed con tres secciones: <strong style="color:var(--text)">Tabla de Posiciones</strong> (PJ, G, E, P, GF, GC, DG, Pts con destacado dorado para top 3), <strong style="color:var(--text)">Goles</strong> (registro de goles por jugador con búsqueda, y tabla de goleadores), y <strong style="color:var(--text)">Penales</strong> (registro y clasificación de penalizaciones). Soporte dark/light mode completo.</p>
+        <div class="module-tags">
+          <span class="module-tag">Tabla de Posiciones</span>
+          <span class="module-tag">Goleadores</span>
+          <span class="module-tag">Penales</span>
+          <span class="module-tag">Top 3 Destacado</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: var(--blue-dim);">🎨</div>
+        <div>
+          <div class="module-name" style="color: var(--blue);">Editor de Diseños</div>
+          <div class="module-sub">frontend/equipos/editor-central.html</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Editor visual tipo canvas para crear plantillas gráficas de equipos. Barra de herramientas con capas de texto, formas geométricas, gradientes, y colores personalizados. Soporte de más de 20 familias tipográficas (Bebas Neue, Orbitron, Cinzel, Russo One, etc.). Control de zoom, capas, exportar imagen y asignación de diseños a categorías específicas. Los diseños se guardan en la tabla <code style="color:var(--green)">disenos</code> con array <code style="color:var(--green)">asignado_a</code>.</p>
+        <div class="module-tags">
+          <span class="module-tag">Canvas Editor</span>
+          <span class="module-tag">20+ Fuentes</span>
+          <span class="module-tag">Gradientes</span>
+          <span class="module-tag">Asignación por Cat.</span>
+          <span class="module-tag">Zoom Control</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: rgba(249,115,22,0.1);">📊</div>
+        <div>
+          <div class="module-name" style="color: var(--orange);">Gráficas</div>
+          <div class="module-sub">frontend/graficas/graficas.html</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Dashboard de estadísticas usando Chart.js 4.4. Gráfica de partidos por día de la semana (bar chart), rendimiento mensual del torneo (line chart), y configuración de ingresos: costo de credencial y premios para los 4 primeros lugares. Soporte dark/light mode con paletas de colores adaptadas. Datos guardados en tablas especializadas de la BD.</p>
+        <div class="module-tags">
+          <span class="module-tag">Chart.js 4.4</span>
+          <span class="module-tag">Bar Chart</span>
+          <span class="module-tag">Line Chart</span>
+          <span class="module-tag">Config Ingresos</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="module-card">
+      <div class="module-card-header">
+        <div class="module-icon" style="background: var(--green-dim);">🖼️</div>
+        <div>
+          <div class="module-name" style="color: var(--green);">Galería de Diseños</div>
+          <div class="module-sub">frontend/equipos/galeria-disenos.html</div>
+        </div>
+      </div>
+      <div class="module-body">
+        <p>Galería visual de todos los diseños guardados en la base de datos. Vista tipo grid con previsualización de cada plantilla. Botón para crear nuevo diseño (abre el editor), opciones para editar diseños existentes y asignar diseños a categorías. Diseños asignados a la categoría activa aparecen resaltados en dorado.</p>
+        <div class="module-tags">
+          <span class="module-tag">Grid View</span>
+          <span class="module-tag">Asignar Categoría</span>
+          <span class="module-tag">Vista Previa</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-label">Funcionalidades Clave</div>
+  <h2 class="section-title">Todo lo que Incluye</h2>
+
+  <div class="feature-list">
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Sistema Multi-Categoría:</strong> Cada categoría (Juvenil, Mayor, Femenil, etc.) tiene su propio conjunto de equipos, jugadores, rol, horarios, goles y estadísticas completamente independientes.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Generador Round-Robin Automático:</strong> Con solo presionar "Crear Rol" genera el calendario completo. Soporte de número par e impar de equipos, partidos en casa y fuera balanceados.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Drag &amp; Drop de Horarios:</strong> Sistema nativo de arrastre de partidos desde el panel de pendientes hacia la cuadrícula semanal. También permite mover partidos ya agendados a otro slot.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Jornadas Doradas:</strong> Marca jornadas completas como jugadas para generar estadísticas y desbloquear la vista de sugerencias de próximos partidos.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Exportación a PDF:</strong> El módulo de Rol de Juegos permite exportar el calendario completo de partidos como PDF directamente desde el navegador.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Colores Dinámicos por Equipo:</strong> En la vista de jugadores, todos los colores del UI (encabezado, acentos, botones) se adaptan automáticamente al color registrado del equipo.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Editor Visual de Plantillas:</strong> Herramienta tipo canvas con capas de texto, formas, gradientes y más de 20 tipografías para crear diseños de equipos asignables por categoría.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Tabla de Posiciones Automática:</strong> Calcula PJ, G, E, P, GF, GC, diferencia de goles y puntos. Top 3 resaltados en oro, plata y bronce.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Modo Oscuro / Claro:</strong> Toggle persistente en todos los módulos. Preferencia guardada en <code>localStorage</code> con transiciones suaves de tema en toda la UI.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Imágenes Base64 Almacenadas:</strong> Escudos de equipos y fotos de jugadores se convierten a base64 y se guardan en la tabla <code>publico</code> de PostgreSQL sin necesidad de CDN externo.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Sugerencia de Partidos:</strong> Módulo inteligente que, analizando las jornadas ya jugadas, sugiere los partidos más lógicos para programar a continuación.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Gestión de Goles y Penales:</strong> Registro individual de goles y penales por jugador, con ranking de goleadores y tabla de jugadores más amonestados.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Configuración de Ingresos:</strong> Define costo de credencial por jugador y montos de premios para los 4 primeros lugares del torneo. Visible en el dashboard de gráficas.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Docker Compose Listo:</strong> La base de datos PostgreSQL levanta en un contenedor con el esquema ya aplicado. Inicio con un solo comando <code>./start.sh</code>.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Protección de Rutas:</strong> Cada módulo verifica <code>sessionStorage.getItem('sesion_jaguar')</code> al cargarse y redirige al login si no hay sesión activa.</span></div>
+    <div class="feature-item"><span class="feature-icon">✓</span><span class="feature-text"><strong>Splash Screen Inteligente:</strong> Animación de carga con el logo del jaguar solo aparece en la primera visita al menú por sesión. En navegaciones posteriores se omite para mayor fluidez.</span></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DATABASE -->
+<section id="database">
+  <div class="section-label">Base de Datos</div>
+  <h2 class="section-title">Esquema PostgreSQL</h2>
+  <p class="section-desc">La base de datos usa PostgreSQL 16 corriendo en Docker. El esquema se aplica automáticamente al primer arranque vía <code style="color:var(--green)">docker-entrypoint-initdb.d/schema.sql</code>. Los datos complejos (jornadas, horarios, diseños) se almacenan como JSONB para máxima flexibilidad.</p>
+
+  <div class="schema-grid">
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">categorias</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">id</span><span class="schema-col-type">SERIAL</span><span class="schema-col-pk">PK</span></div>
+        <div class="schema-col"><span class="schema-col-name">nombre</span><span class="schema-col-type">TEXT UNIQUE</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">equipos</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">id</span><span class="schema-col-type">SERIAL</span><span class="schema-col-pk">PK</span></div>
+        <div class="schema-col"><span class="schema-col-name">nombre</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">categoria_id</span><span class="schema-col-type">INT → categorias</span></div>
+        <div class="schema-col"><span class="schema-col-name">color</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">escudo</span><span class="schema-col-type">TEXT</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">jugadores</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">id</span><span class="schema-col-type">SERIAL</span><span class="schema-col-pk">PK</span></div>
+        <div class="schema-col"><span class="schema-col-name">nombre</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">numero</span><span class="schema-col-type">INTEGER</span></div>
+        <div class="schema-col"><span class="schema-col-name">equipo_id</span><span class="schema-col-type">INT → equipos</span></div>
+        <div class="schema-col"><span class="schema-col-name">foto</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">baja</span><span class="schema-col-type">BOOLEAN</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">rol</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">categoria_id</span><span class="schema-col-type">INT UNIQUE</span><span class="schema-col-pk">FK</span></div>
+        <div class="schema-col"><span class="schema-col-name">jornadas</span><span class="schema-col-type">JSONB [ ]</span></div>
+        <div class="schema-col"><span class="schema-col-name">equipos_en_rol</span><span class="schema-col-type">JSONB [ ]</span></div>
+        <div class="schema-col"><span class="schema-col-name">partidos_jugados</span><span class="schema-col-type">JSONB { }</span></div>
+        <div class="schema-col"><span class="schema-col-name">jornadas_jugadas</span><span class="schema-col-type">JSONB [ ]</span></div>
+        <div class="schema-col"><span class="schema-col-name">jornadas_doradas</span><span class="schema-col-type">JSONB [ ]</span></div>
+        <div class="schema-col"><span class="schema-col-name">partidos_agregados</span><span class="schema-col-type">JSONB { }</span></div>
+        <div class="schema-col"><span class="schema-col-name">partidos_movidos</span><span class="schema-col-type">JSONB { }</span></div>
+        <div class="schema-col"><span class="schema-col-name">jornada_actual_marcada</span><span class="schema-col-type">INTEGER</span></div>
+        <div class="schema-col"><span class="schema-col-name">sugerencia_fija</span><span class="schema-col-type">JSONB</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">goles</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">categoria_id</span><span class="schema-col-type">INT UNIQUE</span></div>
+        <div class="schema-col"><span class="schema-col-name">datos</span><span class="schema-col-type">JSONB { }</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">penales</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">categoria_id</span><span class="schema-col-type">INT UNIQUE</span></div>
+        <div class="schema-col"><span class="schema-col-name">datos</span><span class="schema-col-type">JSONB { }</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">disenos</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">id</span><span class="schema-col-type">SERIAL</span><span class="schema-col-pk">PK</span></div>
+        <div class="schema-col"><span class="schema-col-name">nombre</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">datos</span><span class="schema-col-type">JSONB { }</span></div>
+        <div class="schema-col"><span class="schema-col-name">asignado_a</span><span class="schema-col-type">TEXT[ ]</span></div>
+        <div class="schema-col"><span class="schema-col-name">activo_para</span><span class="schema-col-type">TEXT[ ]</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">horarios</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">id</span><span class="schema-col-type">SERIAL</span><span class="schema-col-pk">PK</span></div>
+        <div class="schema-col"><span class="schema-col-name">datos</span><span class="schema-col-type">JSONB (mapa)</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">publico</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">tipo</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">ref_id</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">datos</span><span class="schema-col-type">JSONB (base64)</span></div>
+        <div class="schema-col"><span class="schema-col-name" style="color:var(--text3)">UNIQUE (tipo, ref_id)</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">partidos_dia</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">categoria_id</span><span class="schema-col-type">INT → categorias</span></div>
+        <div class="schema-col"><span class="schema-col-name">dia</span><span class="schema-col-type">TEXT</span></div>
+        <div class="schema-col"><span class="schema-col-name">partidos</span><span class="schema-col-type">INTEGER</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">rendimiento</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">categoria_id</span><span class="schema-col-type">INT → categorias</span></div>
+        <div class="schema-col"><span class="schema-col-name">mes</span><span class="schema-col-type">INTEGER</span></div>
+        <div class="schema-col"><span class="schema-col-name">valor</span><span class="schema-col-type">NUMERIC</span></div>
+      </div>
+    </div>
+
+    <div class="schema-table">
+      <div class="schema-table-header">
+        <span style="color:var(--text3); font-size:12px;">🗂</span>
+        <span class="schema-table-name">config_ingresos</span>
+      </div>
+      <div class="schema-table-body">
+        <div class="schema-col"><span class="schema-col-name">categoria_id</span><span class="schema-col-type">INT UNIQUE</span></div>
+        <div class="schema-col"><span class="schema-col-name">costo_credencial</span><span class="schema-col-type">NUMERIC</span></div>
+        <div class="schema-col"><span class="schema-col-name">premio_1..4</span><span class="schema-col-type">NUMERIC</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="callout" style="margin-top: 2rem;">
+    <p>Las tablas <strong>rol</strong>, <strong>goles</strong>, <strong>penales</strong>, <strong>horarios</strong> y <strong>colores</strong> usan <strong>JSONB</strong> para almacenar estructuras de datos complejas como arrays de jornadas, mapas de partidos y configuraciones completas. Esto permite actualizar el estado completo del torneo en un solo request con <code>ON CONFLICT ... DO UPDATE</code> (upsert). El campo <code>asignado_a</code> en <strong>disenos</strong> es un array de texto de PostgreSQL para filtrar diseños por categoría.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- API -->
+<section id="api">
+  <div class="section-label">REST API</div>
+  <h2 class="section-title">Endpoints del Backend</h2>
+  <p class="section-desc">El backend expone una API REST en <code style="color:var(--green)">http://localhost:3001</code>. Todos los endpoints retornan JSON. Los datos complejos se reciben y devuelven como objetos JavaScript.</p>
+
+  <div class="api-group">
+    <div class="api-group-title">CATEGORÍAS</div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/categorias</div><div class="api-desc">Lista todas las categorías del torneo</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/categorias</div><div class="api-desc">Crea una nueva categoría — body: <code>{ nombre }</code></div></div></div>
+    <div class="api-row"><span class="api-method method-put">PUT</span><div><div class="api-path">/categorias/:id</div><div class="api-desc">Actualiza el nombre de una categoría</div></div></div>
+    <div class="api-row"><span class="api-method method-del">DEL</span><div><div class="api-path">/categorias/:id</div><div class="api-desc">Elimina categoría y todo su contenido (CASCADE)</div></div></div>
+  </div>
+
+  <div class="api-group">
+    <div class="api-group-title">EQUIPOS</div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/equipos/:categoriaId</div><div class="api-desc">Lista equipos de una categoría</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/equipos</div><div class="api-desc">Crea equipo — body: <code>{ nombre, categoria_id, color, escudo }</code></div></div></div>
+    <div class="api-row"><span class="api-method method-put">PUT</span><div><div class="api-path">/equipos/:id</div><div class="api-desc">Actualiza nombre, color y escudo del equipo</div></div></div>
+    <div class="api-row"><span class="api-method method-del">DEL</span><div><div class="api-path">/equipos/:id</div><div class="api-desc">Elimina equipo y sus jugadores (CASCADE)</div></div></div>
+  </div>
+
+  <div class="api-group">
+    <div class="api-group-title">JUGADORES</div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/jugadores/:equipoId</div><div class="api-desc">Lista jugadores de un equipo</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/jugadores</div><div class="api-desc">Agrega jugador — body: <code>{ nombre, numero, equipo_id, foto }</code></div></div></div>
+    <div class="api-row"><span class="api-method method-put">PUT</span><div><div class="api-path">/jugadores/:id</div><div class="api-desc">Actualiza nombre, número y foto</div></div></div>
+    <div class="api-row"><span class="api-method method-del">DEL</span><div><div class="api-path">/jugadores/:id</div><div class="api-desc">Elimina jugador</div></div></div>
+  </div>
+
+  <div class="api-group">
+    <div class="api-group-title">ROL DE JUEGOS</div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/rol/:categoriaId</div><div class="api-desc">Obtiene el estado completo del torneo (jornadas, partidos, marcadores)</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/rol</div><div class="api-desc">Guarda/actualiza estado del torneo (upsert por categoria_id)</div></div></div>
+    <div class="api-row"><span class="api-method method-del">DEL</span><div><div class="api-path">/rol/:categoriaId</div><div class="api-desc">Elimina el rol completo de una categoría</div></div></div>
+  </div>
+
+  <div class="api-group">
+    <div class="api-group-title">DISEÑOS</div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/disenos/:categoria</div><div class="api-desc">Diseños asignados a esa categoría (<code>asignado_a @> categoria</code>)</div></div></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/disenos</div><div class="api-desc">Todos los diseños globales</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/disenos</div><div class="api-desc">Crea diseño — body: <code>{ nombre, datos, asignado_a }</code></div></div></div>
+    <div class="api-row"><span class="api-method method-put">PUT</span><div><div class="api-path">/disenos/:id</div><div class="api-desc">Actualiza diseño existente</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/disenos/:id/activar</div><div class="api-desc">Asigna diseño a una categoría — body: <code>{ categoria }</code></div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/disenos/:id/asignar</div><div class="api-desc">Reemplaza lista completa de categorías asignadas</div></div></div>
+    <div class="api-row"><span class="api-method method-del">DEL</span><div><div class="api-path">/disenos/:id</div><div class="api-desc">Elimina diseño permanentemente</div></div></div>
+  </div>
+
+  <div class="api-group">
+    <div class="api-group-title">HORARIOS · GOLES · PENALES · IMÁGENES · GRÁFICAS</div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/horarios</div><div class="api-desc">Obtiene el mapa completo de horarios (un solo JSONB)</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/horarios</div><div class="api-desc">Reemplaza el mapa de horarios completo — body: <code>{ datos }</code></div></div></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/goles/:categoriaId</div><div class="api-desc">Obtiene datos de goles por categoría</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/goles</div><div class="api-desc">Guarda/actualiza datos de goles (upsert)</div></div></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><div><div class="api-path">/publico</div><div class="api-desc">Guarda imagen base64 — body: <code>{ tipo, ref_id, datos }</code></div></div></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/publico/:tipo/:id</div><div class="api-desc">Recupera imagen base64 por tipo y referencia</div></div></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/partidos-dia/:categoriaId</div><div class="api-desc">Datos de partidos por día para Chart.js</div></div></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><div><div class="api-path">/config/:categoriaId</div><div class="api-desc">Configuración de ingresos (credencial + premios)</div></div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ESTRUCTURA -->
+<section id="estructura">
+  <div class="section-label">Arquitectura</div>
+  <h2 class="section-title">Estructura del Proyecto</h2>
+
+  <div class="tree">
+    <span><span class="dir">team-soccer-fixed/</span></span>
+    <span class="indent"><span class="dir">backend/</span></span>
+    <span class="indent"><span class="indent"><span class="file">server.js</span><span class="desc">— API REST Express (452 líneas, 13 grupos de rutas)</span></span></span>
+    <span class="indent"><span class="indent"><span class="file">schema.sql</span><span class="desc">— Esquema PostgreSQL completo (13 tablas)</span></span></span>
+    <span class="indent"><span class="indent"><span class="file">package.json</span><span class="desc">— Dependencias: express, pg, cors</span></span></span>
+    <span class="indent"><span class="dir">frontend/</span></span>
+    <span class="indent"><span class="indent"><span class="dir">login/</span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">index.html</span><span class="desc">— Pantalla de acceso con cancha SVG 3D</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="dir">menu/</span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">menu.html</span><span class="desc">— Hub central con selector de categoría</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">menu-base.css / menu-componentes.css</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">menu-navegacion.js / menu-categorias.js</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="dir">equipos/</span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">equipos.html + equipos.js + equipos.css</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">jugadores.html + jugadores.js + jugadores.css</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">editor-central.html</span><span class="desc">— Editor visual de diseños</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">galeria-disenos.html</span><span class="desc">— Galería de plantillas</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="dir">rol/</span><span class="desc">— 9 archivos (HTML + 6 JS + 6 CSS)</span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">index.html</span><span class="desc">— Vista del calendario de partidos</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">rol-generator.js</span><span class="desc">— Lógica round-robin + API sync</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">partidos-equipos.js / vista-jornadas.js</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">sugerencia-partidos.js / utils.js / config.js</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="dir">horarios/</span><span class="desc">— 5 archivos (HTML + 3 JS + 3 CSS)</span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">horarios.html</span><span class="desc">— Agenda semanal</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">horarios-drag-drop.js</span><span class="desc">— Sistema de arrastre completo</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">horarios-main.js / horarios-ui.js</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="dir">puntos/</span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">puntos.html</span><span class="desc">— Tabla de posiciones + goles + penales</span></span></span></span>
+    <span class="indent"><span class="indent"><span class="dir">graficas/</span></span></span>
+    <span class="indent"><span class="indent"><span class="indent"><span class="file">graficas.html</span><span class="desc">— Dashboard Chart.js con estadísticas</span></span></span></span>
+    <span class="indent"><span class="file">docker-compose.yml</span><span class="desc">— PostgreSQL 16 en Docker (puerto 5433)</span></span></span>
+    <span class="indent"><span class="file">start.sh</span><span class="desc">— Script de arranque completo</span></span></span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- INSTALACIÓN -->
+<section id="instalacion">
+  <div class="section-label">Instalación y Arranque</div>
+  <h2 class="section-title">Cómo Correr el Proyecto</h2>
+  <p class="section-desc">El proyecto está diseñado para arrancar fácilmente con Docker y el script de inicio incluido. Solo necesitas Docker Desktop y Node.js instalados.</p>
+
+  <div class="callout">
+    <p><strong>Requisitos:</strong> Docker Desktop (para PostgreSQL), Node.js v18+, y un navegador moderno. El frontend es HTML puro — se abre directamente como archivo local.</p>
+  </div>
+
+  <div class="code-block">
+    <pre><span class="c-comment"># 1. Clonar o descomprimir el proyecto</span>
+<span class="c-cmd">cd</span> team-soccer-fixed
+
+<span class="c-comment"># 2. Opción A — Script automático (recomendado)</span>
+<span class="c-cmd">chmod +x</span> start.sh
+<span class="c-cmd">./start.sh</span>
+<span class="c-comment"># Levanta Docker, espera a Postgres, instala dependencias y arranca el backend</span>
+
+<span class="c-comment"># 2. Opción B — Manual paso a paso</span>
+<span class="c-cmd">docker compose up</span> -d              <span class="c-comment"># Levanta PostgreSQL en puerto 5433</span>
+<span class="c-cmd">cd</span> backend
+<span class="c-cmd">npm install</span>
+<span class="c-cmd">node server.js</span>                    <span class="c-comment"># API en http://localhost:3001</span>
+
+<span class="c-comment"># 3. Abrir el frontend en el navegador</span>
+<span class="c-comment"># Abre este archivo directamente:</span>
+<span class="c-str">file:///ruta/al/proyecto/frontend/login/index.html</span>
+
+<span class="c-comment"># Credenciales de acceso:</span>
+<span class="c-kw">Usuario:</span>    jaguar
+<span class="c-kw">Contraseña:</span> jaguar123</pre>
+  </div>
+
+  <div class="code-block" style="margin-top: 1rem;">
+    <pre><span class="c-comment"># Variables de entorno del backend (opcionales, con defaults):</span>
+<span class="c-kw">PORT</span>         = 3001        <span class="c-comment"># Puerto del servidor Express</span>
+<span class="c-kw">DB_HOST</span>      = localhost   <span class="c-comment"># Host de PostgreSQL</span>
+<span class="c-kw">DB_PORT</span>      = 5433        <span class="c-comment"># Puerto mapeado por Docker</span>
+<span class="c-kw">DB_NAME</span>      = teamsoccer  <span class="c-comment"># Nombre de la base de datos</span>
+<span class="c-kw">DB_USER</span>      = postgres
+<span class="c-kw">DB_PASSWORD</span>  = postgres</pre>
+  </div>
+
+  <div class="feature-list" style="margin-top: 2rem;">
+    <div class="feature-item"><span class="feature-icon">ℹ</span><span class="feature-text">El script <code>start.sh</code> incluye un loop <code>until pg_isready</code> que espera a que Postgres esté completamente listo antes de arrancar el backend, evitando errores de conexión.</span></div>
+    <div class="feature-item"><span class="feature-icon">ℹ</span><span class="feature-text">El esquema SQL se aplica automáticamente al primer arranque del contenedor via <code>docker-entrypoint-initdb.d</code>. No necesitas correr migraciones manualmente.</span></div>
+    <div class="feature-item"><span class="feature-icon">ℹ</span><span class="feature-text">Los datos persisten en el volumen Docker <code>teamsoccer_data</code>. Para borrar todo y empezar limpio: <code>docker compose down -v</code>.</span></div>
+    <div class="feature-item"><span class="feature-icon">ℹ</span><span class="feature-text">El frontend funciona como archivos estáticos (<code>file://</code>), no necesita servidor web propio. Solo requiere que el backend esté corriendo en <code>localhost:3001</code>.</span></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TECH STACK -->
+<section id="tech">
+  <div class="section-label">Stack Tecnológico</div>
+  <h2 class="section-title">Tecnologías Utilizadas</h2>
+
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-card-title" style="color: var(--green);">Frontend</div>
+      <ul>
+        <li>HTML5 + CSS3 + Vanilla JS</li>
+        <li>Sin frameworks (React-free)</li>
+        <li>CSS Variables (temas)</li>
+        <li>Drag &amp; Drop API nativa</li>
+        <li>sessionStorage / localStorage</li>
+        <li>Fetch API para REST calls</li>
+        <li>Chart.js 4.4 (gráficas)</li>
+        <li>Canvas API (editor visual)</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-title" style="color: var(--blue);">Backend</div>
+      <ul>
+        <li>Node.js (v18+)</li>
+        <li>Express 4.18</li>
+        <li>pg (node-postgres 8.11)</li>
+        <li>CORS middleware</li>
+        <li>JSON body parser (10mb limit)</li>
+        <li>Nodemon (dev hot-reload)</li>
+        <li>Pool de conexiones pg</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-title" style="color: var(--gold);">Base de Datos</div>
+      <ul>
+        <li>PostgreSQL 16 Alpine</li>
+        <li>Docker Compose</li>
+        <li>JSONB para datos complejos</li>
+        <li>Arrays TEXT[] nativos</li>
+        <li>ON CONFLICT (upsert)</li>
+        <li>ON DELETE CASCADE</li>
+        <li>Puerto 5433 (evita conflictos)</li>
+      </ul>
+    </div>
+    <div class="tech-card">
+      <div class="tech-card-title" style="color: var(--purple);">Tipografía &amp; Diseño</div>
+      <ul>
+        <li>Bebas Neue (display)</li>
+        <li>Outfit (UI principal)</li>
+        <li>Barlow Condensed (login)</li>
+        <li>IBM Plex Mono (código)</li>
+        <li>20+ fuentes en editor</li>
+        <li>Google Fonts CDN</li>
+        <li>CSS dark/light mode completo</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+
+<div class="divider"></div>
+
+<!-- GALERÍA DE IMÁGENES COMPLETAS - TEAM SOCCER FUT 7 -->
+<section id="galeria" style="padding-top: 2rem;">
+  <div class="section-label">Galería visual</div>
+  <h2 class="section-title">Capturas del Sistema</h2>
+  <p class="section-desc">Todas las interfaces del sistema de gestión de torneos de fútbol 7 — desde la creación de jugadores hasta gráficas de rendimiento.</p>
+
+  <div style="margin-top: 2rem;">
+    <!-- CREAR JUGADOR -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--green);">⚽ CREAR JUGADOR</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/CREART%20JGADOR.png" alt="Crear Jugador" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- DISEÑO CREDENTIAL 2 -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--gold);;">🎨 DISEÑO CREDENCIAL (vista 2)</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/DISENO%20CREDENTIAL2%20.png" alt="Diseño Credential 2" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- DISEÑO CREDENTIALS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--gold);;">🖼️ DISEÑO CREDENCIALES</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/DISENO%20CREDNTIALS.png" alt="Diseño Credentials" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- EQUIPOS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--blue);;">👥 EQUIPOS</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/EQUIPOS.png" alt="Equipos" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- GOLES -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--orange);;">⚽ GOLES / GOLEADORES</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/GOLES.png" alt="Goles" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- GRAFICA PARTIDOS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--green);;">📊 GRÁFICA DE PARTIDOS</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/GRAFICA%20PARTIDOS.png" alt="Grafica Partidos" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- GRAFICAS PARTIDO -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--blue);;">📈 GRÁFICAS DE PARTIDO</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/GRAFICAS%20PARTIDO.png" alt="Graficas Partido" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- IMPRIMIR CREDENTIALS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--purple);;">🖨️ IMPRIMIR CREDENCIALES</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/IMPRIMIR%20CREDENTIALS.png" alt="Imprimir Credentials" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- INGRESOS VS PREMIOS GRAFICAS 2 -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--gold);;">💰 INGRESOS VS PREMIOS (vista 2)</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/INGRESOS%20VS%20PREMIOS%20GRAFICAS%202.png" alt="Ingresos vs Premios 2" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- INGRESOS VS PREMIOS GRAFICAS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--green);;">📊 INGRESOS VS PREMIOS</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/INGRESOS%20VS%20PREMIOS%20GRAFICAS.png" alt="Ingresos vs Premios" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- JORNADA TORNEOS PARTIDOS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--orange);;">📅 JORNADA / TORNEOS / PARTIDOS</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/JORNADA%20TORENEOS%20PARTIDOS.png" alt="Jornada Torneos Partidos" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- JUGADORES -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--blue);;">👤 JUGADORES</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/JUGADORES.png" alt="Jugadores" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- LOGIN -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--green);;">🔐 LOGIN</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/login.png" alt="Login" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- MENU -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--gold);;">🏠 MENÚ PRINCIPAL</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/MENU.png" alt="Menu Principal" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- PARTIDOS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--blue);;">🏆 PARTIDOS / ROL DE JUEGOS</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/PARTIDOS.png" alt="Partidos" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- PUNTOS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--purple);;">🏅 PUNTOS / TABLA DE POSICIONES</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/PUNTOS.png" alt="Puntos" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <!-- QR CREDENTIALS -->
+    <div style="margin-bottom: 3rem; background: var(--bg2); border-radius: 20px; overflow: hidden; border: 1px solid var(--border2);">
+      <div style="background: var(--surface); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border);">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--orange);;">📱 QR CREDENCIALES</span>
+      </div>
+      <img src="https://chicfkbdfqdrrevtrrby.supabase.co/storage/v1/object/public/SOCCER-/QR%20CREDENTIALS.png" alt="QR Credentials" style="width: 100%; height: auto; display: block;">
+    </div>
+
+    <div style="margin-top: 2rem; padding: 1rem; text-align: center; background: var(--surface); border-radius: 60px; border: 1px solid var(--border2);">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; color: var(--green);;">⚽ 17 capturas de pantalla — todas las vistas del sistema FUT 7 El Jaguar</span>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+
+
+
+<footer>
+  <div class="ft-title">⚽ FUT 7 <span class="ft-green">EL JAGUAR</span></div>
+  <p style="margin-bottom: 0.4rem;">Sistema Integral de Gestión para Torneos de Fútbol 7</p>
+  <p>Vanilla JS · Node.js · Express · PostgreSQL · Docker · Chart.js · Drag &amp; Drop</p>
+</footer>
+
+</body>
+</html>
